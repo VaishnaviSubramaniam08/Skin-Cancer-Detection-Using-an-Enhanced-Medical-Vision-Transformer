@@ -1,0 +1,87 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+env/
+ENV/
+.venv
+
+# Backend
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/gradcam_results/*
+!backend/gradcam_results/.gitkeep
+backend/.env
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Trained ML models
+backend/models/*.pth
+backend/models/*.pt
+backend/models/*.ckpt
+
+# Large datasets
+*.zip
+*.tar
+*.tar.gz
+
+# Node
+node_modules/
+dist/
+
+# Logs
+*.log
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Frontend
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+# Trained PyTorch models
+backend/models/*.pth
+backend/models/*.pt
+backend/models/*.ckpt

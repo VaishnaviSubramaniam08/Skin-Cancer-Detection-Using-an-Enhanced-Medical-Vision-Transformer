@@ -89,3 +89,8 @@ backend/models/*.ckpt
 # Large AI model files
 *.safetensors
 backend/models/*.safetensors
+
+# AI model files
+*.safetensors
+*.bin
+backend/models/*.safetensors

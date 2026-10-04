@@ -38,7 +38,8 @@ const History = () => {
 
   const filteredPredictions = predictions.filter((p) =>
     p.stage1_class.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.stage2_class && p.stage2_class.toLowerCase().includes(searchTerm.toLowerCase()))
+    (p.benign_malignant_class && p.benign_malignant_class.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (p.lesion_class && p.lesion_class.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const formatDate = (dateString) => {
@@ -115,10 +116,10 @@ const History = () => {
                           Stage 1 Confidence
                         </th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                          Stage 2 Result
+                          Malignancy
                         </th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                          Stage 2 Confidence
+                          Lesion Type
                         </th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                           Actions
@@ -153,18 +154,28 @@ const History = () => {
                             {(prediction.stage1_confidence * 100).toFixed(2)}%
                           </td>
                           <td className="px-6 py-4">
-                            {prediction.stage2_executed ? (
-                              <span className="px-3 py-1 rounded-full text-sm font-medium bg-primary text-white">
-                                {prediction.stage2_class}
+                            {prediction.benign_malignant_executed ? (
+                              <span
+                                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                  prediction.benign_malignant_class === 'Malignant'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-green-100 text-green-800'
+                                }`}
+                              >
+                                {prediction.benign_malignant_class}
                               </span>
                             ) : (
                               <span className="text-sm text-gray-500">Not Executed</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-700">
-                            {prediction.stage2_executed
-                              ? `${(prediction.stage2_confidence * 100).toFixed(2)}%`
-                              : '-'}
+                          <td className="px-6 py-4">
+                            {prediction.lesion_executed ? (
+                              <span className="px-3 py-1 rounded-full text-sm font-medium bg-primary text-white">
+                                {prediction.lesion_class}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-gray-500">Not Executed</span>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex gap-2">

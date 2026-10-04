@@ -16,3 +16,5 @@ matplotlib==3.8.2
 pydantic==2.5.0
 pydantic-settings==2.1.0
 bson==0.5.10
+transformers==4.35.0
+safetensors==0.4.0

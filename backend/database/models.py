@@ -54,16 +54,22 @@ class PredictionModel(BaseModel):
     user_id: str
     image_path: str
     
-    # Stage 1 results
+    # Stage 1 results (Skin vs Non-Skin)
     stage1_class: str
     stage1_confidence: float
     stage1_probabilities: Dict[str, float]
     
-    # Stage 2 results
-    stage2_executed: bool = False
-    stage2_class: Optional[str] = None
-    stage2_confidence: Optional[float] = None
-    stage2_probabilities: Optional[Dict[str, float]] = None
+    # Benign/Malignant results (Stage 2)
+    benign_malignant_executed: bool = False
+    benign_malignant_class: Optional[str] = None
+    benign_malignant_confidence: Optional[float] = None
+    benign_malignant_probabilities: Optional[Dict[str, float]] = None
+    
+    # Lesion classification results (Stage 3 - 7-class)
+    lesion_executed: bool = False
+    lesion_class: Optional[str] = None
+    lesion_confidence: Optional[float] = None
+    lesion_probabilities: Optional[Dict[str, float]] = None
     
     # Explainability
     gradcam_path: Optional[str] = None
@@ -82,10 +88,14 @@ class PredictionCreate(BaseModel):
     stage1_class: str
     stage1_confidence: float
     stage1_probabilities: Dict[str, float]
-    stage2_executed: bool = False
-    stage2_class: Optional[str] = None
-    stage2_confidence: Optional[float] = None
-    stage2_probabilities: Optional[Dict[str, float]] = None
+    benign_malignant_executed: bool = False
+    benign_malignant_class: Optional[str] = None
+    benign_malignant_confidence: Optional[float] = None
+    benign_malignant_probabilities: Optional[Dict[str, float]] = None
+    lesion_executed: bool = False
+    lesion_class: Optional[str] = None
+    lesion_confidence: Optional[float] = None
+    lesion_probabilities: Optional[Dict[str, float]] = None
     gradcam_path: Optional[str] = None
 
 
@@ -96,10 +106,14 @@ class PredictionResponse(BaseModel):
     stage1_class: str
     stage1_confidence: float
     stage1_probabilities: Dict[str, float]
-    stage2_executed: bool
-    stage2_class: Optional[str]
-    stage2_confidence: Optional[float]
-    stage2_probabilities: Optional[Dict[str, float]]
+    benign_malignant_executed: bool
+    benign_malignant_class: Optional[str]
+    benign_malignant_confidence: Optional[float]
+    benign_malignant_probabilities: Optional[Dict[str, float]]
+    lesion_executed: bool
+    lesion_class: Optional[str]
+    lesion_confidence: Optional[float]
+    lesion_probabilities: Optional[Dict[str, float]]
     gradcam_path: Optional[str]
     created_at: datetime
 

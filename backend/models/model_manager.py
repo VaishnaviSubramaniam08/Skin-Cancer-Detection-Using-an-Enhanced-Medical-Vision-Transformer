@@ -2,6 +2,7 @@ import torch
 
 from models.stage1_model import Stage1SkinClassifier
 from models.stage2_model import Stage2LesionClassifier
+from models.stage2_benign_malignant import BenignMalignantClassifier
 
 
 class ModelManager:
@@ -12,13 +13,14 @@ class ModelManager:
             cls._instance = super(ModelManager, cls).__new__(cls)
 
             cls._instance.stage1_model = None
-            cls._instance.stage2_model = None
+            cls._instance.benign_malignant_model = None
+            cls._instance.lesion_model = None
             cls._instance.device = None
 
         return cls._instance
 
     def load_models(self):
-        """Load both Stage 1 and Stage 2 models."""
+        """Load all three models: Stage 1, Benign/Malignant, and Lesion classification."""
 
         print("Loading models...")
 
@@ -30,20 +32,28 @@ class ModelManager:
         print(f"Using device: {self.device}")
 
         # -----------------------------
-        # Load Stage 1 model
+        # Load Stage 1 model (Skin vs Non-Skin)
         # -----------------------------
-        print("Loading Stage 1 model...")
+        print("Loading Stage 1 model (Skin vs Non-Skin)...")
 
         self.stage1_model = Stage1SkinClassifier()
         self.stage1_model.load_model()
 
         # -----------------------------
-        # Load Stage 2 model
+        # Load Benign/Malignant model
         # -----------------------------
-        print("Loading Stage 2 model...")
+        print("Loading Benign/Malignant model...")
 
-        self.stage2_model = Stage2LesionClassifier()
-        self.stage2_model.load_model()
+        self.benign_malignant_model = BenignMalignantClassifier()
+        self.benign_malignant_model.load_model()
+
+        # -----------------------------
+        # Load Lesion classification model (7-class)
+        # -----------------------------
+        print("Loading Lesion classification model (7-class)...")
+
+        self.lesion_model = Stage2LesionClassifier()
+        self.lesion_model.load_model()
 
         print("All models loaded successfully!")
 
@@ -52,7 +62,8 @@ class ModelManager:
 
         return (
             self.stage1_model is not None
-            and self.stage2_model is not None
+            and self.benign_malignant_model is not None
+            and self.lesion_model is not None
         )
 
     def get_stage1_model(self):
@@ -63,13 +74,21 @@ class ModelManager:
 
         return self.stage1_model
 
-    def get_stage2_model(self):
-        """Get Stage 2 model instance."""
+    def get_benign_malignant_model(self):
+        """Get Benign/Malignant model instance."""
 
-        if self.stage2_model is None:
-            raise RuntimeError("Stage 2 model not loaded")
+        if self.benign_malignant_model is None:
+            raise RuntimeError("Benign/Malignant model not loaded")
 
-        return self.stage2_model
+        return self.benign_malignant_model
+
+    def get_lesion_model(self):
+        """Get Lesion classification model instance."""
+
+        if self.lesion_model is None:
+            raise RuntimeError("Lesion classification model not loaded")
+
+        return self.lesion_model
 
 
 # Global instance

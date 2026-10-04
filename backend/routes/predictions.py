@@ -63,16 +63,19 @@ async def predict(
     db=Depends(get_database)
 ):
     """
-    Run the two-stage skin cancer prediction pipeline.
+    Run the three-stage skin cancer prediction pipeline.
 
     Stage 1:
         SKIN vs NON-SKIN
 
-    Stage 2:
-        Skin lesion classification
+    Stage 2 (if Skin):
+        Benign vs Malignant
+
+    Stage 3 (if Skin):
+        7-class skin lesion classification
 
     Grad-CAM:
-        Generated only when Stage 2 is executed.
+        Generated only when Stage 3 is executed.
     """
 
     # --------------------------------------------------------
@@ -98,10 +101,11 @@ async def predict(
     # --------------------------------------------------------
 
     stage1_model = model_manager.get_stage1_model()
-    stage2_model = model_manager.get_stage2_model()
+    benign_malignant_model = model_manager.get_benign_malignant_model()
+    lesion_model = model_manager.get_lesion_model()
 
     # --------------------------------------------------------
-    # 5. Stage 1 prediction
+    # 5. Stage 1 prediction (Skin vs Non-Skin)
     # --------------------------------------------------------
 
     stage1_class, stage1_confidence = (
@@ -113,47 +117,68 @@ async def predict(
     )
 
     # --------------------------------------------------------
-    # 6. Initialize Stage 2 values
+    # 6. Initialize Stage 2 and Stage 3 values
     # --------------------------------------------------------
 
-    stage2_executed = False
-    stage2_class = None
-    stage2_confidence = None
-    stage2_probabilities = None
+    benign_malignant_executed = False
+    benign_malignant_class = None
+    benign_malignant_confidence = None
+    benign_malignant_probabilities = None
+
+    lesion_executed = False
+    lesion_class = None
+    lesion_confidence = None
+    lesion_probabilities = None
     gradcam_path = None
 
     # --------------------------------------------------------
-    # 7. Stage 2 prediction
+    # 7. Stage 2 prediction (Benign vs Malignant) - only if Skin
     # --------------------------------------------------------
 
     if stage1_class == "SKIN":
+        benign_malignant_executed = True
 
-        stage2_executed = True
-
-        # Stage 2 classification
-        stage2_class, stage2_confidence = (
-            stage2_model.predict(image)
+        # Benign/Malignant classification
+        benign_malignant_class, benign_malignant_confidence = (
+            benign_malignant_model.predict(image)
         )
 
-        # Stage 2 probabilities
-        stage2_probabilities = (
-            stage2_model.get_probabilities(image)
+        # Benign/Malignant probabilities
+        benign_malignant_probabilities = (
+            benign_malignant_model.get_probabilities(image)
         )
 
         # ----------------------------------------------------
-        # Generate Grad-CAM
+        # Stage 3 prediction (7-class lesion) - only if Malignant
         # ----------------------------------------------------
 
-        explanation = generate_stage2_explanation(
-            stage2_model.model,
-            image,
-            stage2_class
-        )
+        if benign_malignant_class == "Malignant":
+            lesion_executed = True
 
-        if explanation.get("available"):
-            gradcam_path = explanation.get(
-                "gradcam_url"
+            # Lesion classification
+            lesion_class, lesion_confidence = (
+                lesion_model.predict(image)
             )
+
+            # Lesion probabilities
+            lesion_probabilities = (
+                lesion_model.get_probabilities(image)
+            )
+
+            # ----------------------------------------------------
+            # Generate Grad-CAM
+            # ----------------------------------------------------
+
+            explanation = generate_stage2_explanation(
+                lesion_model.model,
+                image,
+                lesion_class
+            )
+
+            if explanation.get("available"):
+                gradcam_path = explanation.get(
+                    "gradcam_url"
+                )
 
     # --------------------------------------------------------
     # 8. Create database record
@@ -169,11 +194,17 @@ async def predict(
         "stage1_confidence": stage1_confidence,
         "stage1_probabilities": stage1_probabilities,
 
-        # Stage 2
-        "stage2_executed": stage2_executed,
-        "stage2_class": stage2_class,
-        "stage2_confidence": stage2_confidence,
-        "stage2_probabilities": stage2_probabilities,
+        # Stage 2 (Benign/Malignant)
+        "benign_malignant_executed": benign_malignant_executed,
+        "benign_malignant_class": benign_malignant_class,
+        "benign_malignant_confidence": benign_malignant_confidence,
+        "benign_malignant_probabilities": benign_malignant_probabilities,
+
+        # Stage 3 (Lesion classification)
+        "lesion_executed": lesion_executed,
+        "lesion_class": lesion_class,
+        "lesion_confidence": lesion_confidence,
+        "lesion_probabilities": lesion_probabilities,
 
         # Grad-CAM
         "gradcam_path": gradcam_path,
@@ -208,15 +239,17 @@ async def predict(
     # 11. Return prediction
     # --------------------------------------------------------
 
+    # Handle image path - strip any existing uploads/ prefix and add single /uploads/
+    path_parts = created_prediction['image_path'].replace('\\', '/').split('/')
+    filename = path_parts[-1]
+    image_path = f"/uploads/{filename}"
+
     return PredictionResponse(
         id=str(created_prediction["_id"]),
 
         user_id=created_prediction["user_id"],
 
-        image_path=(
-            f"/uploads/"
-            f"{created_prediction['image_path'].split('/')[-1]}"
-        ),
+        image_path=image_path,
 
         stage1_class=created_prediction.get(
             "stage1_class"
@@ -230,21 +263,38 @@ async def predict(
             "stage1_probabilities"
         ),
 
-        stage2_executed=created_prediction.get(
-            "stage2_executed",
+        benign_malignant_executed=created_prediction.get(
+            "benign_malignant_executed",
             False
         ),
 
-        stage2_class=created_prediction.get(
-            "stage2_class"
+        benign_malignant_class=created_prediction.get(
+            "benign_malignant_class"
         ),
 
-        stage2_confidence=created_prediction.get(
-            "stage2_confidence"
+        benign_malignant_confidence=created_prediction.get(
+            "benign_malignant_confidence"
         ),
 
-        stage2_probabilities=created_prediction.get(
-            "stage2_probabilities"
+        benign_malignant_probabilities=created_prediction.get(
+            "benign_malignant_probabilities"
+        ),
+
+        lesion_executed=created_prediction.get(
+            "lesion_executed",
+            False
+        ),
+
+        lesion_class=created_prediction.get(
+            "lesion_class"
+        ),
+
+        lesion_confidence=created_prediction.get(
+            "lesion_confidence"
+        ),
+
+        lesion_probabilities=created_prediction.get(
+            "lesion_probabilities"
         ),
 
         gradcam_path=created_prediction.get(
@@ -307,10 +357,10 @@ async def get_predictions(
         image_path = p.get("image_path")
 
         if image_path:
-            image_url = (
-                f"/uploads/"
-                f"{image_path.split('/')[-1]}"
-            )
+            # Handle image path - strip any existing uploads/ prefix and add single /uploads/
+            path_parts = image_path.replace('\\', '/').split('/')
+            filename = path_parts[-1]
+            image_url = f"/uploads/{filename}"
         else:
             image_url = None
 
@@ -339,22 +389,40 @@ async def get_predictions(
                     "stage1_probabilities"
                 ),
 
-                # Stage 2
-                stage2_executed=p.get(
-                    "stage2_executed",
+                # Stage 2 (Benign/Malignant)
+                benign_malignant_executed=p.get(
+                    "benign_malignant_executed",
                     False
                 ),
 
-                stage2_class=p.get(
-                    "stage2_class"
+                benign_malignant_class=p.get(
+                    "benign_malignant_class"
                 ),
 
-                stage2_confidence=p.get(
-                    "stage2_confidence"
+                benign_malignant_confidence=p.get(
+                    "benign_malignant_confidence"
                 ),
 
-                stage2_probabilities=p.get(
-                    "stage2_probabilities"
+                benign_malignant_probabilities=p.get(
+                    "benign_malignant_probabilities"
+                ),
+
+                # Stage 3 (Lesion classification)
+                lesion_executed=p.get(
+                    "lesion_executed",
+                    False
+                ),
+
+                lesion_class=p.get(
+                    "lesion_class"
+                ),
+
+                lesion_confidence=p.get(
+                    "lesion_confidence"
+                ),
+
+                lesion_probabilities=p.get(
+                    "lesion_probabilities"
                 ),
 
                 # Grad-CAM
@@ -447,10 +515,10 @@ async def get_prediction(
     )
 
     if image_path:
-        image_url = (
-            f"/uploads/"
-            f"{image_path.split('/')[-1]}"
-        )
+        # Handle image path - strip any existing uploads/ prefix and add single /uploads/
+        path_parts = image_path.replace('\\', '/').split('/')
+        filename = path_parts[-1]
+        image_url = f"/uploads/{filename}"
     else:
         image_url = None
 
@@ -478,22 +546,40 @@ async def get_prediction(
             "stage1_probabilities"
         ),
 
-        # Stage 2
-        stage2_executed=prediction.get(
-            "stage2_executed",
+        # Stage 2 (Benign/Malignant)
+        benign_malignant_executed=prediction.get(
+            "benign_malignant_executed",
             False
         ),
 
-        stage2_class=prediction.get(
-            "stage2_class"
+        benign_malignant_class=prediction.get(
+            "benign_malignant_class"
         ),
 
-        stage2_confidence=prediction.get(
-            "stage2_confidence"
+        benign_malignant_confidence=prediction.get(
+            "benign_malignant_confidence"
         ),
 
-        stage2_probabilities=prediction.get(
-            "stage2_probabilities"
+        benign_malignant_probabilities=prediction.get(
+            "benign_malignant_probabilities"
+        ),
+
+        # Stage 3 (Lesion classification)
+        lesion_executed=prediction.get(
+            "lesion_executed",
+            False
+        ),
+
+        lesion_class=prediction.get(
+            "lesion_class"
+        ),
+
+        lesion_confidence=prediction.get(
+            "lesion_confidence"
+        ),
+
+        lesion_probabilities=prediction.get(
+            "lesion_probabilities"
         ),
 
         # Grad-CAM

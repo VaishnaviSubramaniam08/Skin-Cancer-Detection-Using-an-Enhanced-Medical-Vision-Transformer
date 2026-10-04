@@ -85,3 +85,7 @@ Thumbs.db
 backend/models/*.pth
 backend/models/*.pt
 backend/models/*.ckpt
+
+# Large AI model files
+*.safetensors
+backend/models/*.safetensors

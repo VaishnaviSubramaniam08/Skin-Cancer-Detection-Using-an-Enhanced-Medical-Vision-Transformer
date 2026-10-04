@@ -29,7 +29,7 @@ ENV/
 # AI model files
 *.safetensors
 *.bin
-backend/models/*.safetensors 
+backend/models/model.safetensors 
 
 # Backend
 backend/uploads/*

@@ -25,6 +25,12 @@ env/
 ENV/
 .venv
 
+
+# AI model files
+*.safetensors
+*.bin
+backend/models/*.safetensors 
+
 # Backend
 backend/uploads/*
 !backend/uploads/.gitkeep
@@ -88,9 +94,4 @@ backend/models/*.ckpt
 
 # Large AI model files
 *.safetensors
-backend/models/*.safetensors
-
-# AI model files
-*.safetensors
-*.bin
 backend/models/*.safetensors
